@@ -31,4 +31,10 @@ class EcoTrailMainSpace extends Model
     {
         return $this->hasMany(EcoTrailNearbyPlace::class, 'main_space_id');
     }
+
+
+    public function CatDetails()
+    {
+        return $this->hasOne('App\Models\SpaceCategory','id','category_id') ;
+    }
 }

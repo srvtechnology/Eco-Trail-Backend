@@ -194,6 +194,8 @@ Route::prefix('eco-trail')->group(function () {
     Route::get('/main-spaces/{id}', [EcoTrailMainSpaceController::class, 'show']);
     Route::put('/main-spaces/{id}', [EcoTrailMainSpaceController::class, 'update']);
     Route::delete('/main-spaces/{id}', [EcoTrailMainSpaceController::class, 'destroy']);
+
+    Route::get('/main-spaces-map-track/{id}', [EcoTrailMainSpaceController::class, 'map_markers']);
 });
 
 

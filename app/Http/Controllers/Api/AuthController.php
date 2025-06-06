@@ -25,6 +25,7 @@ class AuthController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
+            'user_type' =>'system',
         ]);
 
         $token = $user->createToken('main')->plainTextToken;
@@ -55,10 +56,10 @@ class AuthController extends Controller
             $message->to($user->email)
                 ->subject('Your OTP Code');
         });
-        Mail::raw("Your one-time verification code is: $otp to login as system or admin user for FCC Advertisement Management System.", function ($message) use ($user) {
-            $message->to($user->email)
-                ->subject('Your OTP Code');
-        });
+        // Mail::raw("Your one-time verification code is: $otp to login as system or admin user for FCC Advertisement Management System.", function ($message) use ($user) {
+        //     $message->to($user->email)
+        //         ->subject('Your OTP Code');
+        // });
 
         //update otp on user table
         $updt = User::where('id', $user->id)->update([
@@ -119,6 +120,27 @@ class AuthController extends Controller
         return response('', 204);
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ============== role =====================//
     public function createRole(Request $request)
     {
         $validatedData = $request->validate([
