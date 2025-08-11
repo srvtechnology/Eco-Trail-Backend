@@ -20,7 +20,10 @@ class EcoTrailMainSpace extends Model
         'google_maps_link',
         'full_address',
         'featured_image',
-        'gallery_images'
+        'gallery_images',
+        'highlight_info',
+        'about_info',
+        'latlong_info',
     ];
 
     protected $casts = [

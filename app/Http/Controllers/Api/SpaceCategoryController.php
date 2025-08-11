@@ -18,8 +18,13 @@ class SpaceCategoryController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        // paginate 10 per page, you can change as needed
-        $categories = $query->orderBy('id', 'desc')->paginate(10);
+         if ($request->has('all') && !empty($request->all==true)) {
+              $categories = $query->orderBy('id', 'desc')->get();
+           }else{
+               $categories = $query->orderBy('id', 'desc')->paginate(10);
+           }
+
+       
 
         return response()->json($categories);
     }

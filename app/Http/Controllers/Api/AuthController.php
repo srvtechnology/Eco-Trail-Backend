@@ -17,6 +17,46 @@ use Mail;
 
 class AuthController extends Controller
 {
+
+
+    public function adminsignup(SignupRequest $request)
+     {
+        $data = $request->validated();
+        /** @var \App\Models\User $user */
+        $user = User::create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => bcrypt($data['password']),
+            'user_type' =>'admin',
+        ]);
+
+         $otp = rand(100000, 999999);
+
+        // Send OTP via email (directly from the controller)
+        Mail::raw("Your one-time verification code is: $otp to login as system or admin user for Eco Trail System.", function ($message) use ($user) {
+            $message->to($user->email)
+                ->subject('Your OTP Code');
+        });
+
+
+        //update otp on user table
+        $updt = User::where('id', $user->id)->update([
+            'otp' => $otp,
+            // 'otp_expires_at' => now()->addMinutes(300),
+            'last_activity_at' => now(),
+        ]);
+
+        $token = $user->createToken('main')->plainTextToken;
+        // return response(compact('user', 'token'));
+         return response([
+            'user' => $user,
+            'message' => 'OTP has been sent to your email. Please verify.'
+        ]);
+    }
+
+
+
+
     public function signup(SignupRequest $request)
     {
         $data = $request->validated();
@@ -25,18 +65,41 @@ class AuthController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => bcrypt($data['password']),
-            'user_type' =>'system',
+            'user_type' =>'user',
+        ]);
+
+         $otp = rand(100000, 999999);
+
+        // Send OTP via email (directly from the controller)
+        Mail::raw("Your one-time verification code is: $otp to login as system or admin user for Eco Trail System.", function ($message) use ($user) {
+            $message->to($user->email)
+                ->subject('Your OTP Code');
+        });
+
+
+        //update otp on user table
+        $updt = User::where('id', $user->id)->update([
+            'otp' => $otp,
+            // 'otp_expires_at' => now()->addMinutes(300),
+            'last_activity_at' => now(),
         ]);
 
         $token = $user->createToken('main')->plainTextToken;
-        return response(compact('user', 'token'));
+        // return response(compact('user', 'token'));
+         return response([
+            'user' => $user,
+            'message' => 'OTP has been sent to your email. Please verify.'
+        ]);
     }
+
+
 
     public function login(LoginRequest $request)
     {
         $credentials = $request->validated();
         if (!Auth::attempt($credentials)) {
             return response([
+                 'login_status'=>false,
                 'message' => 'Provided email or password is incorrect'
             ], 422);
         }
@@ -48,30 +111,64 @@ class AuthController extends Controller
         // return response(compact('user', 'token'));
         // ALTER TABLE `users` ADD `otp` VARCHAR(255) NULL AFTER `updated_at`;
 
-        // Generate OTP
-        $otp = rand(100000, 999999);
+       if (!isset($request->user_type) || $request->user_type !== 'user') {
+        //if admin login
 
-        // Send OTP via email (directly from the controller)
-        Mail::raw("Your one-time verification code is: $otp to login as system or admin user for FCC Advertisement Management System.", function ($message) use ($user) {
-            $message->to($user->email)
-                ->subject('Your OTP Code');
-        });
-        // Mail::raw("Your one-time verification code is: $otp to login as system or admin user for FCC Advertisement Management System.", function ($message) use ($user) {
-        //     $message->to($user->email)
-        //         ->subject('Your OTP Code');
-        // });
+           // Generate OTP
+            $otp = rand(100000, 999999);
 
-        //update otp on user table
-        $updt = User::where('id', $user->id)->update([
-            'otp' => $otp,
-            // 'otp_expires_at' => now()->addMinutes(300),
-            'last_activity_at' => now(),
-        ]);
+            // Send OTP via email (directly from the controller)
+            Mail::raw("Your one-time verification code is: $otp to login as system or admin user for Eco Trail System.", function ($message) use ($user) {
+                $message->to($user->email)
+                    ->subject('Your OTP Code');
+            });
+
+            //update otp on user table
+            $updt = User::where('id', $user->id)->update([
+                'otp' => $otp,
+                // 'otp_expires_at' => now()->addMinutes(300),
+                'last_activity_at' => now(),
+            ]);
+
+            return response([
+                 'login_status'=>true,
+                'u' => $updt,
+                'user' => $user,
+                'message' => 'OTP has been sent to your email. Please verify.'
+            ]);
+        }
+
+        //if user login
+        $chkOtp=User::where('id',$user->id)->first();
+        if($chkOtp->otp != null){
+             $otp = rand(100000, 999999);
+
+            // Send OTP via email (directly from the controller)
+            Mail::raw("Your one-time verification code is: $otp to login as system or admin user for Eco Trail System.", function ($message) use ($user) {
+                $message->to($user->email)
+                    ->subject('Your OTP Code');
+            });
+
+            //update otp on user table
+            $updt = User::where('id', $user->id)->update([
+                'otp' => $otp,
+                // 'otp_expires_at' => now()->addMinutes(300),
+                'last_activity_at' => now(),
+            ]);
+
+            return response([
+                'login_status'=>false,
+                'message' => 'OTP has been sent to your email. Please verify.'
+            ]);
+
+        }
 
         return response([
-            'u' => $updt,
+             'login_status'=>true,
+            'token'=>$token,
+            // 'u' => $updt,
             'user' => $user,
-            'message' => 'OTP has been sent to your email. Please verify.'
+            'message' => 'Login successfully'
         ]);
     }
 
@@ -120,6 +217,22 @@ class AuthController extends Controller
         return response('', 204);
     }
 
+
+
+
+
+public function all_users(Request $request){
+     $search = $request->query('search');
+
+        $query = User::query();
+
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+        $categories = $query->where('user_type','user')->orderBy('id', 'desc')->paginate(10);
+
+        return response()->json($categories);
+}
 
 
 
