@@ -62,7 +62,7 @@ public function index(Request $request)
 
 
 
- public function store(Request $request)
+ public function storeOld(Request $request)
 {
     $validator = Validator::make($request->all(), [
         'place_name' => 'required|string|max:255',
@@ -221,7 +221,7 @@ public function index(Request $request)
 
 
 
-   public function update(Request $request, $id)
+   public function updateOld(Request $request, $id)
 {
     $mainSpace = EcoTrailMainSpace::find($id);
 
@@ -525,6 +525,211 @@ public function index(Request $request)
             'data' => $data,
         ]);
     }
+
+
+
+
+
+
+
+
+    // ====== new store and update method 
+public function store(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'place_name' => 'required|string|max:255',
+        'description' => 'required|string',
+        'category_id' => 'required|integer',
+        'latitude' => 'nullable',
+        'longitude' => 'nullable',
+        'full_address' => 'nullable|string|max:500',
+        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'gallery_images' => 'nullable|array',
+        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'latlong_info.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 'error',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Handle featured image upload
+    $featuredImagePath = null;
+    if ($request->hasFile('featured_image')) {
+        $featuredImagePath = $request->file('featured_image')->store('uploads/main_featured', 'public');
+    }
+
+    // Handle gallery images
+    $galleryImagePaths = [];
+    if ($request->hasFile('gallery_images')) {
+        foreach ($request->file('gallery_images') as $image) {
+            $galleryImagePaths[] = $image->store('uploads/main_gallery', 'public');
+        }
+    }
+
+    // Process latlong_info with images
+    $latlongInfo = [];
+    if ($request->has('latlong_info_json')) {
+        $latlongInfo = json_decode($request->latlong_info_json, true);
+        
+        // Handle image uploads for each point
+        foreach ($latlongInfo as $index => &$point) {
+            if ($request->hasFile("latlong_info.{$index}.image")) {
+                $imagePath = $request->file("latlong_info.{$index}.image")->store('uploads/latlong_images', 'public');
+                $point['image'] = $imagePath;
+            } elseif (isset($point['image_url'])) {
+                $point['image'] = $point['image_url'];
+            } else {
+                $point['image'] = null;
+            }
+        }
+    }
+
+    // Create main space
+    $mainSpace = EcoTrailMainSpace::create([
+        'place_name' => $request->place_name,
+        'description' => $request->description,
+        'category_id' => $request->category_id,
+        'latitude' => $request->latitude,
+        'longitude' => $request->longitude,
+        'full_address' => $request->full_address,
+        'featured_image' => $featuredImagePath,
+        'gallery_images' => json_encode($galleryImagePaths),
+        'highlight_info' => json_encode($request->highlight_info),
+        'about_info' => json_encode($request->about_info),
+        'latlong_info' => json_encode($latlongInfo),
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Main space created successfully',
+        'data' => $mainSpace->load('nearbyPlaces')
+    ], 201);
+}
+
+
+
+
+
+public function update(Request $request, $id)
+{
+    $mainSpace = EcoTrailMainSpace::find($id);
+
+    if (!$mainSpace) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Main space not found'
+        ], 404);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'place_name' => 'sometimes|required|string|max:255',
+        'description' => 'sometimes|required|string',
+        'category_id' => 'sometimes|required|integer',
+        'latitude' => 'nullable',
+        'longitude' => 'nullable',
+        'full_address' => 'sometimes|nullable|string|max:500',
+        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'gallery_images' => 'nullable|array',
+        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'latlong_info.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 'error',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    // Handle featured image upload
+    $featuredImagePath = $mainSpace->featured_image;
+    if ($request->hasFile('featured_image')) {
+        // Delete old featured image if exists
+        if ($featuredImagePath && Storage::disk('public')->exists($featuredImagePath)) {
+            Storage::disk('public')->delete($featuredImagePath);
+        }
+        $featuredImagePath = $request->file('featured_image')->store('uploads/main_featured', 'public');
+    }
+
+    // Handle gallery images
+    $galleryImagePaths = json_decode($mainSpace->gallery_images, true) ?? [];
+    if ($request->hasFile('gallery_images')) {
+        // Delete old gallery images if exists
+        foreach ($galleryImagePaths as $oldImage) {
+            if ($oldImage && Storage::disk('public')->exists($oldImage)) {
+                Storage::disk('public')->delete($oldImage);
+            }
+        }
+        $galleryImagePaths = [];
+        foreach ($request->file('gallery_images') as $image) {
+            $galleryImagePaths[] = $image->store('uploads/main_gallery', 'public');
+        }
+    }
+
+    // Process latlong_info with images
+    $latlongInfo = json_decode($mainSpace->latlong_info, true) ?? [];
+    if ($request->has('latlong_info_json')) {
+        $newLatlongInfo = json_decode($request->latlong_info_json, true);
+        
+        foreach ($newLatlongInfo as $index => &$point) {
+            // Case 1: New image uploaded
+            if ($request->hasFile("latlong_info.{$index}.image")) {
+                // Delete old image if exists
+                if (isset($latlongInfo[$index]['image']) && $latlongInfo[$index]['image']) {
+                    Storage::disk('public')->delete($latlongInfo[$index]['image']);
+                }
+                $imagePath = $request->file("latlong_info.{$index}.image")->store('uploads/latlong_images', 'public');
+                $point['image'] = $imagePath;
+            } 
+            // Case 2: Image was removed (has image_url null or empty in JSON)
+            elseif (empty($point['image'])) {
+                // Delete old image if exists
+                if (isset($latlongInfo[$index]['image']) && $latlongInfo[$index]['image']) {
+                    Storage::disk('public')->delete($latlongInfo[$index]['image']);
+                }
+                $point['image'] = null;
+            }
+            // Case 3: Keep existing image (has image_url in request)
+            elseif (isset($request->input("latlong_info")[$index]['image_url'])) {
+                $point['image'] = $request->input("latlong_info")[$index]['image_url'];
+            }
+            // Case 4: Fallback to existing image from DB
+            elseif (isset($latlongInfo[$index]['image']) && $latlongInfo[$index]['image']) {
+                $point['image'] = $latlongInfo[$index]['image'];
+            }
+            // Default case
+            else {
+                $point['image'] = null;
+            }
+        }
+        $latlongInfo = $newLatlongInfo;
+    }
+
+    // Update main space
+    $mainSpace->update([
+        'place_name' => $request->has('place_name') ? $request->place_name : $mainSpace->place_name,
+        'description' => $request->has('description') ? $request->description : $mainSpace->description,
+        'category_id' => $request->has('category_id') ? $request->category_id : $mainSpace->category_id,
+        'latitude' => ($request->filled('latitude') && $request->latitude !== 'null') ? $request->latitude : $mainSpace->latitude,
+        'longitude' => ($request->filled('longitude') && $request->longitude !== 'null') ? $request->longitude : $mainSpace->longitude,
+        'full_address' => ($request->filled('full_address') && $request->full_address !== 'null') ? $request->full_address : $mainSpace->full_address,
+        'featured_image' => $featuredImagePath,
+        'gallery_images' => json_encode($galleryImagePaths),
+        'highlight_info' => json_encode($request->highlight_info),
+        'about_info' => json_encode($request->about_info),
+        'latlong_info' => json_encode($latlongInfo),
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Main space updated successfully',
+        'data' => $mainSpace->load('nearbyPlaces')
+    ]);
+}
 
 
 
