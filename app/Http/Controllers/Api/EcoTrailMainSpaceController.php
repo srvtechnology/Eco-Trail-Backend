@@ -72,9 +72,9 @@ public function index(Request $request)
         'longitude' => 'nullable',
         // 'google_maps_link' => 'nullable|url',
         'full_address' => 'nullable|string|max:500',
-        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:25120',
         'gallery_images' => 'nullable|array',
-        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:25120',
 
         // 'nearby_places' => 'nullable',
         // 'nearby_places.*.place_name' => 'required|string|max:255',
@@ -85,7 +85,7 @@ public function index(Request $request)
         // 'nearby_places.*.distance_from_main' => 'required|numeric|min:0',
         // 'nearby_places.*.distance_unit' => 'required|string|in:km,miles',
         // 'nearby_places.*.images' => 'nullable|array',
-        // 'nearby_places.*.images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        // 'nearby_places.*.images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:25120',
         // 'nearby_places.*.trees' => 'nullable|array',
         // 'nearby_places.*.trees.*' => 'string',
         // 'nearby_places.*.wildlife' => 'nullable|string',
@@ -240,9 +240,9 @@ public function index(Request $request)
         'longitude' => 'nullable',
         // 'google_maps_link' => 'nullable|url',
         'full_address' => 'sometimes|nullable|string|max:500',
-        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:25120',
         'gallery_images' => 'nullable|array',
-        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:25120',
 
         // 'nearby_places' => 'nullable',
         // 'nearby_places.*.id' => 'sometimes|integer|exists:eco_trail_nearby_places,id',
@@ -254,7 +254,7 @@ public function index(Request $request)
         // 'nearby_places.*.distance_from_main' => 'required|numeric|min:0',
         // 'nearby_places.*.distance_unit' => 'required|string|in:km,miles',
         // 'nearby_places.*.images' => 'nullable|array',
-        // 'nearby_places.*.images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        // 'nearby_places.*.images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:25120',
         // 'nearby_places.*.trees' => 'nullable|array',
         // 'nearby_places.*.trees.*' => 'string',
         // 'nearby_places.*.wildlife' => 'nullable|string',
@@ -543,10 +543,10 @@ public function store(Request $request)
         'latitude' => 'nullable',
         'longitude' => 'nullable',
         'full_address' => 'nullable|string|max:500',
-        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:25120',
         'gallery_images' => 'nullable|array',
-        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-        'latlong_info.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:25120',
+        'latlong_info.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:25120',
     ]);
 
     if ($validator->fails()) {
@@ -632,10 +632,10 @@ public function update(Request $request, $id)
         'latitude' => 'nullable',
         'longitude' => 'nullable',
         'full_address' => 'sometimes|nullable|string|max:500',
-        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:25120',
         'gallery_images' => 'nullable|array',
-        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-        'latlong_info.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'gallery_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:25120',
+        'latlong_info.*.image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:25120',
     ]);
 
     if ($validator->fails()) {

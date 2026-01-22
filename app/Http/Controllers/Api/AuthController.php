@@ -49,6 +49,7 @@ class AuthController extends Controller
         $token = $user->createToken('main')->plainTextToken;
         // return response(compact('user', 'token'));
          return response([
+            'otp' => $otp,
             'user' => $user,
             'message' => 'OTP has been sent to your email. Please verify.'
         ]);
